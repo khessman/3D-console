@@ -1,7 +1,7 @@
 # @Date:   2020-11-29T20:15:25+01:00
 # @Email:  kalle.hessman@gmail.com
 # @Filename: rotate3d.py
-# @Last modified time: 2020-12-02T00:01:40+01:00
+# @Last modified time: 2020-12-02T01:08:16+01:00
 
 
 
@@ -174,7 +174,6 @@ def rotate_x(pivot,point,angle):
     rads = math.radians(angle)
     cos = math.cos(angle)
     sin = math.sin(angle)
-    p_old=list(point)
     inverted_pivot = [-pivot[0],-pivot[1],-pivot[2]]
     #translate
     point = translate_point(inverted_pivot,point)
@@ -232,114 +231,63 @@ def rotate_z(pivot,point,angle):
 
     return point
 
+def rotate_model(model,pivot,axis,angle):
+    if axis=='x':
+        for i,p in enumerate(model['points']):
+            model['points'][i] = rotate_x(pivot,p,angle)
+    if axis=='y':
+        for i,p in enumerate(model['points']):
+            model['points'][i] = rotate_y(pivot,p,angle)
+    if axis=='z':
+        for i,p in enumerate(model['points']):
+            model['points'][i] = rotate_z(pivot,p,angle)
 
-p1 = vectorToMatrix([center_x-10,center_y-10,center_z,1])
-p2 = vectorToMatrix([center_x+10,center_y-10,center_z,1])
-p3 = vectorToMatrix([center_x+10,center_y+10,center_z,1])
-p4 = vectorToMatrix([center_x-10,center_y+10,center_z,1])
+def undraw_model(model):
+    for line in model['lines']:
+        draw_line(
+            model['points'][line[0]],
+            model['points'][line[1]],
+            color=None,
+            delete=True
+            )
+def draw_model(model):
+    for line in model['lines']:
+        draw_line(
+            model['points'][line[0]],
+            model['points'][line[1]],
+            color=line[2],
+            )
 
-p5 = vectorToMatrix([center_x-10,center_y-10,center_z+20,1])
-p6 = vectorToMatrix([center_x+10,center_y-10,center_z+20,1])
-p7 = vectorToMatrix([center_x+10,center_y+10,center_z+20,1])
-p8 = vectorToMatrix([center_x-10,center_y+10,center_z+20,1])
-
-
-# drawVectorPoint(p1)
-# drawVectorPoint(p2)
-# drawVectorPoint(p3)
-# drawVectorPoint(p4)
-# drawVectorPoint(p5)
-# drawVectorPoint(p6)
-# drawVectorPoint(p7)
-# drawVectorPoint(p8)
-# draw_line(p1,p2)
-# draw_line(p2,p3)
-# draw_line(p3,p4)
-# draw_line(p4,p1)
-# draw_line(p5,p6)
-# draw_line(p6,p7)
-# draw_line(p7,p8)
-# draw_line(p8,p5)
-#
-# draw_line(p1,p5)
-# draw_line(p2,p6)
-# draw_line(p3,p7)
-# draw_line(p4,p8)
+my_3dmodel={
+    'name':'cube',
+    'x':None,
+    'y':None,
+    'points':[
+        [[center_x-10],[center_y-10],[center_z],[1]],
+        [[center_x+10],[center_y-10],[center_z],[1]],
+        [[center_x+10],[center_y+10],[center_z],[1]],
+        [[center_x-10],[center_y+10],[center_z],[1]],
+        [[center_x-10],[center_y-10],[center_z+20],[1]],
+        [[center_x+10],[center_y-10],[center_z+20],[1]],
+        [[center_x+10],[center_y+10],[center_z+20],[1]],
+        [[center_x-10],[center_y+10],[center_z+20],[1]]
+    ],
+    'lines':[
+        [0,1,(0,255,0)],[1,2,(0,255,0)],[2,3,(0,255,0)],[3,0,(0,255,0)],
+        [4,5,(0,0,255)],[5,6,(0,0,255)],[6,7,(0,0,255)],[7,4,(0,0,255)],
+        [0,4,(0,255,255)],[1,5,(0,255,255)],[2,6,(0,255,255)],[3,7,(0,255,255)]
+    ]
+}
 
 update_screen()
 time.sleep(0.5)
-for angle in range(0,-360,-1):
+for angle in range(360):
     time.sleep(0.05)
-
-    # drawVectorPoint(p1,delete=True)
-    # drawVectorPoint(p2,delete=True)
-    # drawVectorPoint(p3,delete=True)
-    # drawVectorPoint(p4,delete=True)
-
-    draw_line(p1,p2,delete=True)
-    draw_line(p2,p3,delete=True)
-    draw_line(p3,p4,delete=True)
-    draw_line(p4,p1,delete=True)
-    draw_line(p5,p6,delete=True)
-    draw_line(p6,p7,delete=True)
-    draw_line(p7,p8,delete=True)
-    draw_line(p8,p5,delete=True)
-    draw_line(p1,p5,delete=True)
-    draw_line(p2,p6,delete=True)
-    draw_line(p3,p7,delete=True)
-    draw_line(p4,p8,delete=True)
-
+    undraw_model(my_3dmodel)
     update_screen()
-    p1 = rotate_x(origin,p1,0.1)
-    p2 = rotate_x(origin,p2,0.1)
-    p3 = rotate_x(origin,p3,0.1)
-    p4 = rotate_x(origin,p4,0.1)
-    p5 = rotate_x(origin,p5,0.1)
-    p6 = rotate_x(origin,p6,0.1)
-    p7 = rotate_x(origin,p7,0.1)
-    p8 = rotate_x(origin,p8,0.1)
-
-    p1 = rotate_y(origin,p1,0.1)
-    p2 = rotate_y(origin,p2,0.1)
-    p3 = rotate_y(origin,p3,0.1)
-    p4 = rotate_y(origin,p4,0.1)
-    p5 = rotate_y(origin,p5,0.1)
-    p6 = rotate_y(origin,p6,0.1)
-    p7 = rotate_y(origin,p7,0.1)
-    p8 = rotate_y(origin,p8,0.1)
-
-    p1 = rotate_z(origin,p1,0.1)
-    p2 = rotate_z(origin,p2,0.1)
-    p3 = rotate_z(origin,p3,0.1)
-    p4 = rotate_z(origin,p4,0.1)
-    p5 = rotate_z(origin,p5,0.1)
-    p6 = rotate_z(origin,p6,0.1)
-    p7 = rotate_z(origin,p7,0.1)
-    p8 = rotate_z(origin,p8,0.1)
-
-    # drawVectorPoint(p1)
-    # drawVectorPoint(p2)
-    # drawVectorPoint(p3)
-    # drawVectorPoint(p4)
-
-    draw_line(p1,p2,color=(0,255,255))
-    draw_line(p2,p3,color=(255,0,255))
-    draw_line(p3,p4,color=(255,255,0))
-    draw_line(p4,p1,color=(0,255,0))
-    draw_line(p5,p6,color=(0,0,255))
-    draw_line(p6,p7,color=(255,0,0))
-    draw_line(p7,p8,color=(255,255,255))
-    draw_line(p8,p5,color=(255,255,255))
-
-    draw_line(p1,p5,color=(255,255,255))
-    draw_line(p2,p6,color=(255,255,255))
-    draw_line(p3,p7,color=(255,255,255))
-    draw_line(p4,p8,color=(255,255,255))
-
+    rotate_model(my_3dmodel,origin,'x',0.1)
+    rotate_model(my_3dmodel,origin,'y',0.1)
+    rotate_model(my_3dmodel,origin,'z',0.1)
+    draw_model(my_3dmodel)
     update_screen()
-    # print(angle)
-    # print(p1)
-    # print(p2)
-    # print(p3)
-    # print(p4)
 exit()
