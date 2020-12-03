@@ -1,7 +1,7 @@
 # @Date:   2020-11-29T20:15:25+01:00
 # @Email:  kalle.hessman@gmail.com
 # @Filename: rotate3d.py
-# @Last modified time: 2020-12-03T04:59:40+01:00
+# @Last modified time: 2020-12-03T05:16:36+01:00
 
 
 
@@ -12,7 +12,7 @@ import math
 import models
 import random
 import keyboard
-from colors import color,blue, green, white, yellow,red
+from colors import color
 ''' this is the ansicolors module ^^^ '''
 
 import ctypes
@@ -398,25 +398,25 @@ while True:
     if keyboard.is_pressed('right'):
         undraw_wireframe(models.my_3dmodel)
         update_screen()
-        rotate_model(models.my_3dmodel,origin,'x',0.1)
+        rotate_model(models.my_3dmodel,origin,'y',0.1)
         draw_wireframe(models.my_3dmodel)
         update_screen()
     if keyboard.is_pressed('left'):
         undraw_wireframe(models.my_3dmodel)
         update_screen()
-        rotate_model(models.my_3dmodel,origin,'x',-0.1)
+        rotate_model(models.my_3dmodel,origin,'y',-0.1)
         draw_wireframe(models.my_3dmodel)
         update_screen()
     if keyboard.is_pressed('up'):
         undraw_wireframe(models.my_3dmodel)
         update_screen()
-        rotate_model(models.my_3dmodel,origin,'y',0.1)
+        rotate_model(models.my_3dmodel,origin,'x',0.1)
         draw_wireframe(models.my_3dmodel)
         update_screen()
     if keyboard.is_pressed('down'):
         undraw_wireframe(models.my_3dmodel)
         update_screen()
-        rotate_model(models.my_3dmodel,origin,'y',-0.1)
+        rotate_model(models.my_3dmodel,origin,'x',-0.1)
         draw_wireframe(models.my_3dmodel)
         update_screen()
     if keyboard.is_pressed('z'):
