@@ -1,7 +1,7 @@
 # @Date:   2020-11-29T20:15:25+01:00
 # @Email:  kalle.hessman@gmail.com
 # @Filename: rotate3d.py
-# @Last modified time: 2020-12-03T03:47:50+01:00
+# @Last modified time: 2020-12-03T04:59:40+01:00
 
 
 
@@ -11,6 +11,7 @@ import time
 import math
 import models
 import random
+import keyboard
 from colors import color,blue, green, white, yellow,red
 ''' this is the ansicolors module ^^^ '''
 
@@ -337,11 +338,11 @@ def undraw_wireframe(model):
 
 def draw_wireframe(model):
     for line in model['lines']:
+        p1,p2,color = line
         draw_line(
             model['points'][line[0]],
             model['points'][line[1]],
-            color=line[2],
-            )
+            color=line[2],)
 
 def render_model(model):
     '''
@@ -392,16 +393,43 @@ def render_model(model):
 
 
 update_screen()
-rotate_model(models.my_3dmodel,origin,'x',2)
-time.sleep(0.5)
-for angle in range(360):
-    time.sleep(0.05)
-    undraw_wireframe(models.my_3dmodel)
-    update_screen()
-    # rotate_model(models.my_3dmodel,origin,'x',0.1)
-    rotate_model(models.my_3dmodel,origin,'y',0.1)
-    # rotate_model(models.my_3dmodel,origin,'z',0.1)
-    draw_wireframe(models.my_3dmodel)
-    # render_model(models.my_3dmodel)
-    update_screen()
+while True:
+
+    if keyboard.is_pressed('right'):
+        undraw_wireframe(models.my_3dmodel)
+        update_screen()
+        rotate_model(models.my_3dmodel,origin,'x',0.1)
+        draw_wireframe(models.my_3dmodel)
+        update_screen()
+    if keyboard.is_pressed('left'):
+        undraw_wireframe(models.my_3dmodel)
+        update_screen()
+        rotate_model(models.my_3dmodel,origin,'x',-0.1)
+        draw_wireframe(models.my_3dmodel)
+        update_screen()
+    if keyboard.is_pressed('up'):
+        undraw_wireframe(models.my_3dmodel)
+        update_screen()
+        rotate_model(models.my_3dmodel,origin,'y',0.1)
+        draw_wireframe(models.my_3dmodel)
+        update_screen()
+    if keyboard.is_pressed('down'):
+        undraw_wireframe(models.my_3dmodel)
+        update_screen()
+        rotate_model(models.my_3dmodel,origin,'y',-0.1)
+        draw_wireframe(models.my_3dmodel)
+        update_screen()
+    if keyboard.is_pressed('z'):
+        undraw_wireframe(models.my_3dmodel)
+        update_screen()
+        rotate_model(models.my_3dmodel,origin,'z',0.1)
+        draw_wireframe(models.my_3dmodel)
+        update_screen()
+    if keyboard.is_pressed('x'):
+        undraw_wireframe(models.my_3dmodel)
+        update_screen()
+        rotate_model(models.my_3dmodel,origin,'z',-0.1)
+        draw_wireframe(models.my_3dmodel)
+        update_screen()
+
 exit()
