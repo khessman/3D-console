@@ -1,7 +1,7 @@
 # @Date:   2020-11-29T20:15:25+01:00
 # @Email:  kalle.hessman@gmail.com
 # @Filename: rotate3d.py
-# @Last modified time: 2020-12-03T22:53:26+01:00
+# @Last modified time: 2020-12-03T23:41:00+01:00
 
 
 
@@ -169,10 +169,10 @@ def draw_line(p1,p2,color=(255,255,255),delete=False):
 def calculate_line(p1,p2):
     ''' returns all points between two points forming a line'''
     line=[]
-    x1 = int(p1[0][0]+0.5)
-    y1 = int(p1[1][0]+0.5)
-    x2 = int(p2[0][0]+0.5)
-    y2 = int(p2[1][0]+0.5)
+    x1 = int(p1[0]+0.5)
+    y1 = int(p1[1]+0.5)
+    x2 = int(p2[0]+0.5)
+    y2 = int(p2[1]+0.5)
     dx = x2-x1
     dy = y2-y1
     dx1=abs(dx)
@@ -185,7 +185,7 @@ def calculate_line(p1,p2):
                 x,y,xe=x1,y1,x2
             else:
                 x,y,xe=x2,y2,x1
-            line.append([[x],[y]])
+            line.append([x,y])
             while x < xe:
                 x+=1
                 if px < 0:
@@ -196,13 +196,13 @@ def calculate_line(p1,p2):
                     else:
                         y-=1
                     px+=2*(dy1-dx1)
-                # line.append([[x],[y]])
+                line.append([x,y])
         else:
             if dy >= 0:
                 x,y,ye = x1,y1,y2
             else:
                 x,y,ye = x2,y2,y1
-            line.append([[x],[y]])
+            line.append([x,y])
             while y < ye:
                 y+=1
                 if py <= 0:
@@ -213,10 +213,9 @@ def calculate_line(p1,p2):
                     else:
                         x-=1
                     py+=2*(dx1-dy1)
-                line.append([[x],[y]])
+                line.append([x,y])
     except IndexError:
         pass
-        # print(f"X:{x} Y:{y}")
     return line
 
 def drawVectorPoint(point,color,delete=False):
@@ -228,6 +227,9 @@ def drawVectorPoint(point,color,delete=False):
 
 def vectorToMatrix(vector):
     return [[p] for p in vector]
+
+def matrixToVector(matrix):
+    return [element[0] for element in matrix]
 
 def translate_point(pivot,point):
     tx,ty,tz = pivot[0],pivot[1],pivot[2]
@@ -348,71 +350,46 @@ def draw_wireframe(model):
             model['points'][line[1]],
             color=line[2],)
 
-def render_model(model):
-    '''
-    använd draw_line for att beräkna alla punkter mellan två punkter.
-    returnera dessa och kalla den listan för line_a
-    Gör likadant med en till linje(beror på ledd men börja med den nedanför i en rektangel)
-    och spara undan den punktlistan i line_b.
-    skap sedan nya linjer mellan dessa punkter, från punkt 1 i line_a till punkt 1 i line_b.
-    färglägg dessa punkter med mer eller mindre ljus(högre värden -> 255) beroende på Z-pos.
-    '''
-    # first lets calc the lines between a and b
-    line_a=calculate_line(model['points'][0], model['points'][1])
-    line_b=calculate_line(model['points'][2], model['points'][3])
-    # then lets calc and append an interpolated z value between the diagonal points points[0] and points[2]
-    # the [2] means Z-value
-    if model['points'][0][2] > model['points'][2][2]:
-        avg_z = int((model['points'][0][2][0] - model['points'][2][2][0]) / len(line_a))
-        for i,p in enumerate(line_a):
-            p.append([avg_z*i])
-        for i,p in enumerate(line_b):
-            p.append([avg_z*i])
-    else:
-        avg_z = int((model['points'][2][2][0] - model['points'][0][2][0]) / len(line_a))
-        for i,p in enumerate(line_a):
-            p.append([avg_z*i])
-        for i,p in enumerate(line_b):
-            p.append([avg_z*i])
-    for line in line_a:
+def poly_fill(p1,p2,p3,*args):
+    line_list=[]
+    line_a_to_b = calculate_line(p1,p2)
+    print(line_a_to_b)
+    for point in line_a_to_b:
+        line_list.append(calculate_line(point,p3))
+
+    for line in line_list:
         print(line)
+        draw_line(line[0],line[1])
+
+
+
+if __name__ == '__main__':
+    models =[models.plane]
+    for model in models:
+        poly_fill(
+            matrixToVector(model['points'][0]),
+            matrixToVector(model['points'][1]),
+            matrixToVector(model['points'][2])
+        )
     a=input()
-    # line_c=calculate_line(model['points'][0], model['points'][4])
-    # line_d=calculate_line(model['points'][1], model['points'][5])
 
-    if len(line_a) > len(line_b):
-        for p in range(len(line_a)):
-            draw_line(line_a[p-1],line_b[p],color=(0,255,50))
-    else:
-        for p in range(len(line_b)):
-            draw_line(line_a[p],line_b[p-1],color=(0,255,50))
+    while True:
 
-    # if len(line_c) > len(line_d):
-    #     for p in range(len(line_c)):
-    #         draw_line(line_c[p-1],line_d[p-1],color=(255,150,255))
-    # else:
-    #     for p in range(len(line_d)):
-    #         draw_line(line_c[p-1],line_d[p-1],color=(255,150,255))
-
-models =[models.cube,models.tree]
-# model = models.cube
-while True:
-
-    if keyboard.is_pressed('right'):
-        for model in models:
-            rotate_model(model,origin,'y',0.1)
-    if keyboard.is_pressed('left'):
-        for model in models:
-            rotate_model(model,origin,'y',-0.1)
-    if keyboard.is_pressed('up'):
-        for model in models:
-            rotate_model(model,origin,'x',0.1)
-    if keyboard.is_pressed('down'):
-        for model in models:
-            rotate_model(model,origin,'x',-0.1)
-    if keyboard.is_pressed('z'):
-        for model in models:
-            rotate_model(model,origin,'z',0.1)
-    if keyboard.is_pressed('x'):
-        for model in models:
-            rotate_model(model,origin,'z',-0.1)
+        if keyboard.is_pressed('right'):
+            for model in models:
+                rotate_model(model,origin,'y',0.1)
+        if keyboard.is_pressed('left'):
+            for model in models:
+                rotate_model(model,origin,'y',-0.1)
+        if keyboard.is_pressed('up'):
+            for model in models:
+                rotate_model(model,origin,'x',0.1)
+        if keyboard.is_pressed('down'):
+            for model in models:
+                rotate_model(model,origin,'x',-0.1)
+        if keyboard.is_pressed('z'):
+            for model in models:
+                rotate_model(model,origin,'z',0.1)
+        if keyboard.is_pressed('x'):
+            for model in models:
+                rotate_model(model,origin,'z',-0.1)
