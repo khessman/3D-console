@@ -1,7 +1,7 @@
 # @Date:   2020-11-29T20:15:25+01:00
 # @Email:  kalle.hessman@gmail.com
 # @Filename: rotate3d.py
-# @Last modified time: 2020-12-03T05:16:36+01:00
+# @Last modified time: 2020-12-03T22:53:26+01:00
 
 
 
@@ -38,7 +38,7 @@ class cell:
 bkg=" "
 bkg_color="#333333"
 dot='o'
-size_x,size_y,size_z = 80,50,50
+size_x,size_y,size_z = 80,50,80
 center_x = int(size_x / 2)
 center_y = int(size_y / 2)
 center_z = int(size_z / 2)
@@ -162,9 +162,9 @@ def draw_line(p1,p2,color=(255,255,255),delete=False):
                 cell.color = color if delete==False else bkg_color
                 cell.hasChanged=True
     except IndexError as e:
-        print(f"IndexError X:{x} Y:{y}")
-        print(color,p1)
-        a=input()
+        pass
+        # print(f"IndexError X:{x} Y:{y}")
+        # print(color,p1)
 
 def calculate_line(p1,p2):
     ''' returns all points between two points forming a line'''
@@ -317,6 +317,8 @@ def rotate_z(pivot,point,angle):
 def rotate_model(model,pivot,axis,angle):
     ''' Rotates every point in a model around the chosen pivot'''
 
+    undraw_wireframe(model)
+
     if axis=='x':
         for i,p in enumerate(model['points']):
             model['points'][i] = rotate_x(pivot,p,angle)
@@ -326,6 +328,8 @@ def rotate_model(model,pivot,axis,angle):
     if axis=='z':
         for i,p in enumerate(model['points']):
             model['points'][i] = rotate_z(pivot,p,angle)
+    draw_wireframe(model)
+    update_screen()
 
 def undraw_wireframe(model):
     for line in model['lines']:
@@ -390,46 +394,25 @@ def render_model(model):
     #     for p in range(len(line_d)):
     #         draw_line(line_c[p-1],line_d[p-1],color=(255,150,255))
 
-
-
-update_screen()
+models =[models.cube,models.tree]
+# model = models.cube
 while True:
 
     if keyboard.is_pressed('right'):
-        undraw_wireframe(models.my_3dmodel)
-        update_screen()
-        rotate_model(models.my_3dmodel,origin,'y',0.1)
-        draw_wireframe(models.my_3dmodel)
-        update_screen()
+        for model in models:
+            rotate_model(model,origin,'y',0.1)
     if keyboard.is_pressed('left'):
-        undraw_wireframe(models.my_3dmodel)
-        update_screen()
-        rotate_model(models.my_3dmodel,origin,'y',-0.1)
-        draw_wireframe(models.my_3dmodel)
-        update_screen()
+        for model in models:
+            rotate_model(model,origin,'y',-0.1)
     if keyboard.is_pressed('up'):
-        undraw_wireframe(models.my_3dmodel)
-        update_screen()
-        rotate_model(models.my_3dmodel,origin,'x',0.1)
-        draw_wireframe(models.my_3dmodel)
-        update_screen()
+        for model in models:
+            rotate_model(model,origin,'x',0.1)
     if keyboard.is_pressed('down'):
-        undraw_wireframe(models.my_3dmodel)
-        update_screen()
-        rotate_model(models.my_3dmodel,origin,'x',-0.1)
-        draw_wireframe(models.my_3dmodel)
-        update_screen()
+        for model in models:
+            rotate_model(model,origin,'x',-0.1)
     if keyboard.is_pressed('z'):
-        undraw_wireframe(models.my_3dmodel)
-        update_screen()
-        rotate_model(models.my_3dmodel,origin,'z',0.1)
-        draw_wireframe(models.my_3dmodel)
-        update_screen()
+        for model in models:
+            rotate_model(model,origin,'z',0.1)
     if keyboard.is_pressed('x'):
-        undraw_wireframe(models.my_3dmodel)
-        update_screen()
-        rotate_model(models.my_3dmodel,origin,'z',-0.1)
-        draw_wireframe(models.my_3dmodel)
-        update_screen()
-
-exit()
+        for model in models:
+            rotate_model(model,origin,'z',-0.1)
