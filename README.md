@@ -8,3 +8,4 @@ Dependencies:
 Installation of packages are simplest using PIP.
   pip install ansicolors
   pip install keyboard
+
