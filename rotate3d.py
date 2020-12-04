@@ -1,7 +1,7 @@
 # @Date:   2020-11-29T20:15:25+01:00
 # @Email:  kalle.hessman@gmail.com
 # @Filename: rotate3d.py
-# @Last modified time: 2020-12-03T23:41:00+01:00
+# @Last modified time: 2020-12-04T01:00:09+01:00
 
 
 
@@ -75,9 +75,9 @@ def shader(color,point):
     color = list(color)
     if len(color) < 1:return
     #scale color based on Z value...
-    color[0] = int(color[0] * point[2][0] / 20)
-    color[1] = int(color[1] * point[2][0] / 20)
-    color[2] = int(color[2] * point[2][0] / 20)
+    color[0] = int(color[0] * point[2] / 20)
+    color[1] = int(color[1] * point[2] / 20)
+    color[2] = int(color[2] * point[2] / 20)
     if color[0] > 255:color[0]=255
     if color[1] > 255:color[1]=255
     if color[2] > 255:color[2]=255
@@ -86,12 +86,12 @@ def shader(color,point):
 
 def draw_line(p1,p2,color=(255,255,255),delete=False):
     try:
-        x1 = int(p1[0][0]+0.5)
-        y1 = int(p1[1][0]+0.5)
-        z1 = int(p1[2][0]+0.5)
-        x2 = int(p2[0][0]+0.5)
-        y2 = int(p2[1][0]+0.5)
-        z2 = int(p2[2][0]+0.5)
+        x1 = int(p1[0]+0.5)
+        y1 = int(p1[1]+0.5)
+        z1 = int(p1[2]+0.5)
+        x2 = int(p2[0]+0.5)
+        y2 = int(p2[1]+0.5)
+        z2 = int(p2[2]+0.5)
         dx = x2-x1
         dy = y2-y1
         dx1=abs(dx)
@@ -219,7 +219,7 @@ def calculate_line(p1,p2):
     return line
 
 def drawVectorPoint(point,color,delete=False):
-    x,y=int(point[0][0]+0.5),int(point[1][0]+0.5)
+    x,y=int(point[0]+0.5),int(point[1]+0.5)
     cell = grid[y][x]
     cell.tile = dot if delete==False else bkg
     cell.color = color  if delete==False else bkg_color
@@ -330,14 +330,16 @@ def rotate_model(model,pivot,axis,angle):
     if axis=='z':
         for i,p in enumerate(model['points']):
             model['points'][i] = rotate_z(pivot,p,angle)
+
+    poly_fill(model)
     draw_wireframe(model)
     update_screen()
 
 def undraw_wireframe(model):
     for line in model['lines']:
         draw_line(
-            model['points'][line[0]],
-            model['points'][line[1]],
+            matrixToVector(model['points'][line[0]]),
+            matrixToVector(model['points'][line[1]]),
             color=None,
             delete=True
             )
@@ -346,33 +348,30 @@ def draw_wireframe(model):
     for line in model['lines']:
         p1,p2,color = line
         draw_line(
-            model['points'][line[0]],
-            model['points'][line[1]],
+            matrixToVector(model['points'][line[0]]),
+            matrixToVector(model['points'][line[1]]),
             color=line[2],)
 
-def poly_fill(p1,p2,p3,*args):
-    line_list=[]
-    line_a_to_b = calculate_line(p1,p2)
-    print(line_a_to_b)
-    for point in line_a_to_b:
-        line_list.append(calculate_line(point,p3))
-
-    for line in line_list:
-        print(line)
-        draw_line(line[0],line[1])
-
+def poly_fill(model):
+    for poly in model['polygons']:
+        p1 = matrixToVector(model['points'][poly[0]])
+        p2 = matrixToVector(model['points'][poly[1]])
+        p3 = matrixToVector(model['points'][poly[2]])
+        color = poly[3]
+        line_a_to_b = calculate_line(p1,p2)
+        for point in line_a_to_b:
+            line = calculate_line(point,p3)
+            for p in line:
+                drawVectorPoint(p,color)
 
 
 if __name__ == '__main__':
-    models =[models.plane]
-    for model in models:
-        poly_fill(
-            matrixToVector(model['points'][0]),
-            matrixToVector(model['points'][1]),
-            matrixToVector(model['points'][2])
-        )
-    a=input()
+    model = models.cube
+    poly_fill(model)
 
+    update_screen()
+
+    models =[models.cube]
     while True:
 
         if keyboard.is_pressed('right'):
