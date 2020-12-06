@@ -1,7 +1,7 @@
 # @Date:   2020-11-29T20:15:25+01:00
 # @Email:  kalle.hessman@gmail.com
 # @Filename: rotate3d.py
-# @Last modified time: 2020-12-04T01:00:09+01:00
+# @Last modified time: 2020-12-04T13:13:11+01:00
 
 
 
@@ -71,18 +71,30 @@ def update_screen():
 def delete_line(p1,p2):
     draw_line(p1,p2,delete=True)
 
-def shader(color,point):
-    color = list(color)
-    if len(color) < 1:return
+def shader(color,point,max_z=0):
     #scale color based on Z value...
-    color[0] = int(color[0] * point[2] / 20)
-    color[1] = int(color[1] * point[2] / 20)
-    color[2] = int(color[2] * point[2] / 20)
-    if color[0] > 255:color[0]=255
-    if color[1] > 255:color[1]=255
-    if color[2] > 255:color[2]=255
-    # print(f"Z:{point[2]} color:{color[0]} {color[1]} {color[2]}")
-    return color
+    global DEBUG
+    color2 = list(color[:])
+
+    #normalize Z values to 0-255
+    if max_z !=0:
+        scaler = (point[2]) / (max_z)
+    else:
+        scaler = 1
+
+
+    r = color[0]  * scaler
+    g = color[1]  * scaler
+    b = color[2]  * scaler
+
+    color2[0] = int(color[0] * scaler)
+    color2[1] = int(color[1] * scaler)
+    color2[2] = int(color[2] * scaler)
+
+    if color2[0] > 255:color2[0]=255
+    if color2[1] > 255:color2[1]=255
+    if color2[2] > 255:color2[2]=255
+    return color2
 
 def draw_line(p1,p2,color=(255,255,255),delete=False):
     try:
@@ -167,12 +179,17 @@ def draw_line(p1,p2,color=(255,255,255),delete=False):
         # print(color,p1)
 
 def calculate_line(p1,p2):
+    global DEBUG
     ''' returns all points between two points forming a line'''
     line=[]
     x1 = int(p1[0]+0.5)
-    y1 = int(p1[1]+0.5)
     x2 = int(p2[0]+0.5)
+    y1 = int(p1[1]+0.5)
     y2 = int(p2[1]+0.5)
+    z1 = int(p1[2]+0.5)
+    z2 = int(p2[2]+0.5)
+
+
     dx = x2-x1
     dy = y2-y1
     dx1=abs(dx)
@@ -216,6 +233,10 @@ def calculate_line(p1,p2):
                 line.append([x,y])
     except IndexError:
         pass
+    ''' Adding a interpolated Z depth value between points '''
+    depth = (abs(z2-z1) / len(line))
+    for i,l in enumerate(line):
+        l.append((depth)*i)
     return line
 
 def drawVectorPoint(point,color,delete=False):
@@ -331,46 +352,75 @@ def rotate_model(model,pivot,axis,angle):
         for i,p in enumerate(model['points']):
             model['points'][i] = rotate_z(pivot,p,angle)
 
-    poly_fill(model)
+    if RENDER_MODE == 'polygons':
+        poly_fill(model)
     draw_wireframe(model)
     update_screen()
 
 def undraw_wireframe(model):
-    for line in model['lines']:
-        draw_line(
-            matrixToVector(model['points'][line[0]]),
-            matrixToVector(model['points'][line[1]]),
-            color=None,
-            delete=True
-            )
-
-def draw_wireframe(model):
-    for line in model['lines']:
-        p1,p2,color = line
-        draw_line(
-            matrixToVector(model['points'][line[0]]),
-            matrixToVector(model['points'][line[1]]),
-            color=line[2],)
-
-def poly_fill(model):
     for poly in model['polygons']:
         p1 = matrixToVector(model['points'][poly[0]])
         p2 = matrixToVector(model['points'][poly[1]])
         p3 = matrixToVector(model['points'][poly[2]])
         color = poly[3]
+        draw_line(p1,p2,color,delete=True)
+        draw_line(p2,p3,color,delete=True)
+
+def draw_wireframe(model):
+    for poly in model['polygons']:
+        p1 = matrixToVector(model['points'][poly[0]])
+        p2 = matrixToVector(model['points'][poly[1]])
+        p3 = matrixToVector(model['points'][poly[2]])
+        color = poly[3]
+        draw_line(p1,p2,color)
+        draw_line(p2,p3,color)
+
+def print_debug():
+    moveCursor(len(grid),0)
+    print(' '*50)
+    moveCursor(len(grid),0)
+    print(DEBUG)
+
+def poly_fill(model):
+    global DEBUG
+    # ''' test to sort the polygons based on their Z-values
+    #     so that we can draw them in a specific order
+    #     This is built in a clunky way just to confirm
+    #     the principle, it should be rebuilt later '''
+    # polygon_z_list=[]
+    # for i,poly in enumerate(model['polygons']):
+    #     p1_z = matrixToVector(model['points'][poly[0]])[2]
+    #     p2_z = matrixToVector(model['points'][poly[1]])[2]
+    #     p3_z = matrixToVector(model['points'][poly[2]])[2]
+    #     # sum the z points
+    #     polygon_z_list.append([i,p1_z+p2_z+p3_z])
+    # #sort the list from low to high
+    # polygon_z_list.sort(key=lambda x: x[1])
+    # a=input()
+
+    ''' /test '''
+    for poly in model['polygons']:
+        p1 = matrixToVector(model['points'][poly[0]])
+        p2 = matrixToVector(model['points'][poly[1]])
+        p3 = matrixToVector(model['points'][poly[2]])
+        color = poly[3][:]
+
         line_a_to_b = calculate_line(p1,p2)
         for point in line_a_to_b:
             line = calculate_line(point,p3)
+            max_z = max(line, key=lambda x: x[2])[2]
             for p in line:
-                drawVectorPoint(p,color)
+                shaded_color = shader(color,p,max_z)
+                drawVectorPoint(p,shaded_color)
 
 
 if __name__ == '__main__':
+    DEBUG='start'
+    RENDER_MODE = 'polygons'
     model = models.cube
-    poly_fill(model)
+    # poly_fill(model)
 
-    update_screen()
-
+    # update_screen()
     models =[models.cube]
     while True:
 
@@ -392,3 +442,4 @@ if __name__ == '__main__':
         if keyboard.is_pressed('x'):
             for model in models:
                 rotate_model(model,origin,'z',-0.1)
+        print_debug()
