@@ -352,9 +352,10 @@ def rotate_model(model,pivot,axis,angle):
         for i,p in enumerate(model['points']):
             model['points'][i] = rotate_z(pivot,p,angle)
 
-    if RENDER_MODE == 'polygons':
+    if FILL_POLYGONS:
         poly_fill(model)
-    draw_wireframe(model)
+    if WIREFRAME_ENABLED:
+        draw_wireframe(model)
     update_screen()
 
 def undraw_wireframe(model):
@@ -383,40 +384,43 @@ def print_debug():
 
 def poly_fill(model):
     global DEBUG
-    # ''' test to sort the polygons based on their Z-values
-    #     so that we can draw them in a specific order
-    #     This is built in a clunky way just to confirm
-    #     the principle, it should be rebuilt later '''
-    # polygon_z_list=[]
-    # for i,poly in enumerate(model['polygons']):
-    #     p1_z = matrixToVector(model['points'][poly[0]])[2]
-    #     p2_z = matrixToVector(model['points'][poly[1]])[2]
-    #     p3_z = matrixToVector(model['points'][poly[2]])[2]
-    #     # sum the z points
-    #     polygon_z_list.append([i,p1_z+p2_z+p3_z])
-    # #sort the list from low to high
-    # polygon_z_list.sort(key=lambda x: x[1])
-    # a=input()
-
-    ''' /test '''
-    for poly in model['polygons']:
+    ''' test to sort the polygons based on their Z-values
+        so that we can draw them in a specific order
+        This is built in a clunky way just to confirm
+        the principle, it should be rebuilt later '''
+    polygon_z_list=[]
+    for i,poly in enumerate(model['polygons']):
+        p1_z = matrixToVector(model['points'][poly[0]])[2]
+        p2_z = matrixToVector(model['points'][poly[1]])[2]
+        p3_z = matrixToVector(model['points'][poly[2]])[2]
+        # sum the z points
+        polygon_z_list.append([i,p1_z+p2_z+p3_z])
+    #sort the list from low to high
+    polygon_z_list.sort(key=lambda x: x[1])
+    for i in range(len(polygon_z_list)):
+        poly = model['polygons'][i]
         p1 = matrixToVector(model['points'][poly[0]])
         p2 = matrixToVector(model['points'][poly[1]])
         p3 = matrixToVector(model['points'][poly[2]])
         color = poly[3][:]
-
+        # calc line between two points...
         line_a_to_b = calculate_line(p1,p2)
+        # calc line from each points of the above calculated line, to point3
+        # and draw the lines(shading based on z_value)
         for point in line_a_to_b:
             line = calculate_line(point,p3)
-            max_z = max(line, key=lambda x: x[2])[2]
+            max_z = max(line, key=lambda x: x[2])[2] #extract max Z-value
             for p in line:
-                shaded_color = shader(color,p,max_z)
+                if SHADER_ENABLED:
+                    shaded_color = shader(color,p,max_z)
+                else:
+                    shaded_color = color
                 drawVectorPoint(p,shaded_color)
-
-
 if __name__ == '__main__':
     DEBUG='start'
-    RENDER_MODE = 'polygons'
+    FILL_POLYGONS=False
+    SHADER_ENABLED=False
+    WIREFRAME_ENABLED=True
     model = models.cube
     # poly_fill(model)
 
@@ -424,6 +428,12 @@ if __name__ == '__main__':
     models =[models.cube]
     while True:
 
+        if keyboard.is_pressed('w'):
+            WIREFRAME_ENABLED = not(WIREFRAME_ENABLED)
+        if keyboard.is_pressed('s'):
+            SHADER_ENABLED = not(SHADER_ENABLED)
+        if keyboard.is_pressed('p'):
+            FILL_POLYGONS = not(FILL_POLYGONS)
         if keyboard.is_pressed('right'):
             for model in models:
                 rotate_model(model,origin,'y',0.1)
@@ -442,4 +452,4 @@ if __name__ == '__main__':
         if keyboard.is_pressed('x'):
             for model in models:
                 rotate_model(model,origin,'z',-0.1)
-        print_debug()
+        # print_debug()
