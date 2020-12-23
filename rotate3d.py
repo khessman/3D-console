@@ -35,6 +35,7 @@ class cell:
         self.type='background'
         self.frozen = False
         self.color=bkg_color
+        self.zbuffer=0
 bkg=" "
 bkg_color="#333333"
 dot='o'
@@ -58,7 +59,7 @@ rotX_90 =  [x',      [cos90  -sin90  0       [x,
             z']       0      0       1]       z]
 '''
 
-def update_screen():
+def updateScreen():
     for row in range(len(grid)):
         for col in range(len(grid[row])):
             cell = grid[row][col]
@@ -68,8 +69,8 @@ def update_screen():
                     moveCursor(row,col)
                     print(color(f"{cell.tile}",cell.color))
 
-def delete_line(p1,p2):
-    draw_line(p1,p2,delete=True)
+def deleteLine(p1,p2):
+    drawLine(p1,p2,delete=True)
 
 def shader(color,point,max_z=0):
     #scale color based on Z value...
@@ -96,7 +97,7 @@ def shader(color,point,max_z=0):
     if color2[2] > 255:color2[2]=255
     return color2
 
-def draw_line(p1,p2,color=(255,255,255),delete=False):
+def drawLine(p1,p2,color=(255,255,255),delete=False):
     try:
         x1 = int(p1[0]+0.5)
         y1 = int(p1[1]+0.5)
@@ -123,7 +124,10 @@ def draw_line(p1,p2,color=(255,255,255),delete=False):
             else:
                 color = shader(color,p2) if delete==False else color
             cell.color = color  if delete==False else bkg_color
+            if z1 > cell.zbuffer:   cell.zbuffer = z1
+            if z2 > cell.zbuffer:   cell.zbuffer = z2
             cell.hasChanged=True
+
             while x < xe:
                 x+=1
                 if px < 0:
@@ -141,6 +145,8 @@ def draw_line(p1,p2,color=(255,255,255),delete=False):
                 else:
                     color = shader(color,p2) if delete==False else color
                 cell.color = color if delete==False else bkg_color
+                if z1 > cell.zbuffer:   cell.zbuffer = z1
+                if z2 > cell.zbuffer:   cell.zbuffer = z2
                 cell.hasChanged=True
         else:
             if dy >= 0:
@@ -154,6 +160,8 @@ def draw_line(p1,p2,color=(255,255,255),delete=False):
             else:
                 color = shader(color,p2) if delete==False else color
             cell.color = color if delete==False else bkg_color
+            if z1 > cell.zbuffer:   cell.zbuffer = z1
+            if z2 > cell.zbuffer:   cell.zbuffer = z2
             cell.hasChanged=True
             while y < ye:
                 y+=1
@@ -172,13 +180,15 @@ def draw_line(p1,p2,color=(255,255,255),delete=False):
                 else:
                     color = shader(color,p2) if delete==False else color
                 cell.color = color if delete==False else bkg_color
+                if z1 > cell.zbuffer:   cell.zbuffer = z1
+                if z2 > cell.zbuffer:   cell.zbuffer = z2
                 cell.hasChanged=True
     except IndexError as e:
         pass
         # print(f"IndexError X:{x} Y:{y}")
         # print(color,p1)
 
-def calculate_line(p1,p2):
+def calculateLine(p1,p2):
     global DEBUG
     ''' returns all points between two points forming a line'''
     line=[]
@@ -240,11 +250,14 @@ def calculate_line(p1,p2):
     return line
 
 def drawVectorPoint(point,color,delete=False):
-    x,y=int(point[0]+0.5),int(point[1]+0.5)
+    x,y,z=int(point[0]+0.5),int(point[1]+0.5),int(point[2]+0.5)
     cell = grid[y][x]
     cell.tile = dot if delete==False else bkg
     cell.color = color  if delete==False else bkg_color
-    cell.hasChanged=True
+    # cell.hasChanged=True
+    if z > cell.zbuffer:
+        cell.hasChanged=True
+        cell.zbuffer = z
 
 def vectorToMatrix(vector):
     return [[p] for p in vector]
@@ -252,7 +265,7 @@ def vectorToMatrix(vector):
 def matrixToVector(matrix):
     return [element[0] for element in matrix]
 
-def translate_point(pivot,point):
+def translatePoint(pivot,point):
     tx,ty,tz = pivot[0],pivot[1],pivot[2]
     translation_matrix = [
         [1.0, 0.0, 0.0, tx],
@@ -260,9 +273,9 @@ def translate_point(pivot,point):
         [0.0, 0.0, 1.0, tz],
         [0.0, 0.0, 0.0, 1.0]
     ]
-    return matrix_multiply(translation_matrix,point)
+    return matrixMultiply(translation_matrix,point)
 
-def matrix_multiply(a, b):
+def matrixMultiply(a, b):
     colsA=len(a[0])
     rowsA=len(a)
     colsB=len(b[0])
@@ -276,13 +289,13 @@ def matrix_multiply(a, b):
 
     return result
 
-def rotate_x(pivot,point,angle):
+def rotateX(pivot,point,angle):
     rads = math.radians(angle)
     cos = math.cos(angle)
     sin = math.sin(angle)
     inverted_pivot = [-pivot[0],-pivot[1],-pivot[2]]
     #translate
-    point = translate_point(inverted_pivot,point)
+    point = translatePoint(inverted_pivot,point)
     xrot=[
         [1.0,   0.0,    0.0,    0.0],
         [0.0,   cos,    -sin,   0.0],
@@ -290,19 +303,19 @@ def rotate_x(pivot,point,angle):
         [0.0,   0.0,    0.0,    1.0]
         ]
     #rotate
-    point = matrix_multiply(xrot,point)
+    point = matrixMultiply(xrot,point)
     #translate back
-    point = translate_point(pivot,point)
+    point = translatePoint(pivot,point)
 
     return point
 
-def rotate_y(pivot,point,angle):
+def rotateY(pivot,point,angle):
     rads = math.radians(angle)
     cos = math.cos(angle)
     sin = math.sin(angle)
     inverted_pivot = [-pivot[0],-pivot[1],-pivot[2]]
     #translate
-    point = translate_point(inverted_pivot,point)
+    point = translatePoint(inverted_pivot,point)
     yrot=[
         [cos,   0.0,    sin,    0.0],
         [0.0,   1.0,    0.0,    0.0],
@@ -310,19 +323,19 @@ def rotate_y(pivot,point,angle):
         [0.0,   0.0,    0.0,    1.0]
         ]
     #rotate
-    point = matrix_multiply(yrot,point)
+    point = matrixMultiply(yrot,point)
     #translate back
-    point = translate_point(pivot,point)
+    point = translatePoint(pivot,point)
     return point
 
-def rotate_z(pivot,point,angle):
+def rotateZ(pivot,point,angle):
     rads = math.radians(angle)
     cos = math.cos(angle)
     sin = math.sin(angle)
     inverted_pivot = [-pivot[0],-pivot[1],-pivot[2]]
     old_point = list(point)
     #translate
-    point = translate_point(inverted_pivot,point)
+    point = translatePoint(inverted_pivot,point)
     zrot=[
         [cos,   -sin,   0.0,    0.0],
         [sin,   cos,    0.0,    0.0],
@@ -331,58 +344,58 @@ def rotate_z(pivot,point,angle):
         ]
 
     #rotate
-    point = matrix_multiply(zrot,point)
+    point = matrixMultiply(zrot,point)
     #translate back
-    point = translate_point(pivot,point)
+    point = translatePoint(pivot,point)
 
     return point
 
-def rotate_model(model,pivot,axis,angle):
+def rotateModel(model,pivot,axis,angle):
     ''' Rotates every point in a model around the chosen pivot'''
 
-    undraw_wireframe(model)
+    undrawWireframe(model)
 
     if axis=='x':
         for i,p in enumerate(model['points']):
-            model['points'][i] = rotate_x(pivot,p,angle)
+            model['points'][i] = rotateX(pivot,p,angle)
     if axis=='y':
         for i,p in enumerate(model['points']):
-            model['points'][i] = rotate_y(pivot,p,angle)
+            model['points'][i] = rotateY(pivot,p,angle)
     if axis=='z':
         for i,p in enumerate(model['points']):
-            model['points'][i] = rotate_z(pivot,p,angle)
+            model['points'][i] = rotateZ(pivot,p,angle)
 
     if FILL_POLYGONS:
-        poly_fill(model)
+        polyFill(model)
     if WIREFRAME_ENABLED:
-        draw_wireframe(model)
-    update_screen()
+        drawWireframe(model)
+    updateScreen()
 
-def undraw_wireframe(model):
+def undrawWireframe(model):
     for poly in model['polygons']:
         p1 = matrixToVector(model['points'][poly[0]])
         p2 = matrixToVector(model['points'][poly[1]])
         p3 = matrixToVector(model['points'][poly[2]])
         color = poly[3]
-        draw_line(p1,p2,color,delete=True)
-        draw_line(p2,p3,color,delete=True)
+        drawLine(p1,p2,color,delete=True)
+        drawLine(p2,p3,color,delete=True)
 
-def draw_wireframe(model):
+def drawWireframe(model):
     for poly in model['polygons']:
         p1 = matrixToVector(model['points'][poly[0]])
         p2 = matrixToVector(model['points'][poly[1]])
         p3 = matrixToVector(model['points'][poly[2]])
         color = poly[3]
-        draw_line(p1,p2,color)
-        draw_line(p2,p3,color)
+        drawLine(p1,p2,color)
+        drawLine(p2,p3,color)
 
-def print_debug():
+def printDebug():
     moveCursor(len(grid),0)
     print(' '*50)
     moveCursor(len(grid),0)
     print(DEBUG)
 
-def poly_fill(model):
+def polyFill(model):
     global DEBUG
     ''' test to sort the polygons based on their Z-values
         so that we can draw them in a specific order
@@ -404,11 +417,11 @@ def poly_fill(model):
         p3 = matrixToVector(model['points'][poly[2]])
         color = poly[3][:]
         # calc line between two points...
-        line_a_to_b = calculate_line(p1,p2)
+        line_a_to_b = calculateLine(p1,p2)
         # calc line from each points of the above calculated line, to point3
         # and draw the lines(shading based on z_value)
         for point in line_a_to_b:
-            line = calculate_line(point,p3)
+            line = calculateLine(point,p3)
             max_z = max(line, key=lambda x: x[2])[2] #extract max Z-value
             for p in line:
                 if SHADER_ENABLED:
@@ -422,9 +435,9 @@ if __name__ == '__main__':
     SHADER_ENABLED=False
     WIREFRAME_ENABLED=True
     model = models.cube
-    # poly_fill(model)
+    # polyFill(model)
 
-    # update_screen()
+    # updateScreen()
     models =[models.cube]
     while True:
 
@@ -436,20 +449,20 @@ if __name__ == '__main__':
             FILL_POLYGONS = not(FILL_POLYGONS)
         if keyboard.is_pressed('right'):
             for model in models:
-                rotate_model(model,origin,'y',0.1)
+                rotateModel(model,origin,'y',0.1)
         if keyboard.is_pressed('left'):
             for model in models:
-                rotate_model(model,origin,'y',-0.1)
+                rotateModel(model,origin,'y',-0.1)
         if keyboard.is_pressed('up'):
             for model in models:
-                rotate_model(model,origin,'x',0.1)
+                rotateModel(model,origin,'x',0.1)
         if keyboard.is_pressed('down'):
             for model in models:
-                rotate_model(model,origin,'x',-0.1)
+                rotateModel(model,origin,'x',-0.1)
         if keyboard.is_pressed('z'):
             for model in models:
-                rotate_model(model,origin,'z',0.1)
+                rotateModel(model,origin,'z',0.1)
         if keyboard.is_pressed('x'):
             for model in models:
-                rotate_model(model,origin,'z',-0.1)
-        # print_debug()
+                rotateModel(model,origin,'z',-0.1)
+        # printDebug()
