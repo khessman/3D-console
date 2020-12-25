@@ -36,6 +36,8 @@ class cell:
         self.frozen = False
         self.color=bkg_color
         self.zbuffer=0
+
+# PARAMETERS(make this class-based later....)
 bkg=" "
 bkg_color="#333333"
 dot='o'
@@ -44,6 +46,8 @@ center_x = int(size_x / 2)
 center_y = int(size_y / 2)
 center_z = int(size_z / 2)
 origin=[center_x,center_y,center_z,1]
+OLD_DEBUG=None
+DEBUG=None
 
 #create the grid
 grid = []
@@ -52,12 +56,6 @@ for y in range(size_y):
     for x in range(size_x):
         row.append(cell(x,y))
     grid.append(row)
-
-'''
-rotX_90 =  [x',      [cos90  -sin90  0       [x,
-            y',  =    sin90  cos90   0   *    y,
-            z']       0      0       1]       z]
-'''
 
 def updateScreen():
     for row in range(len(grid)):
@@ -69,7 +67,14 @@ def updateScreen():
                     moveCursor(row,col)
                     print(color(f"{cell.tile}",cell.color))
 
-def deleteLine(p1,p2):
+    global DEBUG
+    DEBUG=f"cell {center_x},{center_y} zbuffer is {grid[center_y][center_x].zbuffer}"
+    cell = grid[center_y][center_x]
+    cell.color=(200,200,200)
+    moveCursor(center_y,center_x)
+    print(color(f"{cell.tile}",cell.color))
+
+def eraseLine(p1,p2):
     drawLine(p1,p2,delete=True)
 
 def shader(color,point,max_z=0):
@@ -83,10 +88,9 @@ def shader(color,point,max_z=0):
     else:
         scaler = 1
 
-
-    r = color[0]  * scaler
-    g = color[1]  * scaler
-    b = color[2]  * scaler
+    # r = color[0]  * scaler
+    # g = color[1]  * scaler
+    # b = color[2]  * scaler
 
     color2[0] = int(color[0] * scaler)
     color2[1] = int(color[1] * scaler)
@@ -98,95 +102,24 @@ def shader(color,point,max_z=0):
     return color2
 
 def drawLine(p1,p2,color=(255,255,255),delete=False):
-    try:
-        x1 = int(p1[0]+0.5)
-        y1 = int(p1[1]+0.5)
-        z1 = int(p1[2]+0.5)
-        x2 = int(p2[0]+0.5)
-        y2 = int(p2[1]+0.5)
-        z2 = int(p2[2]+0.5)
-        dx = x2-x1
-        dy = y2-y1
-        dx1=abs(dx)
-        dy1=abs(dy)
-        px=2*dy1-dx1
-        py=2*dx1-dy1
+    points = calculateLine(p1,p2)
+    z1 = int(p1[2]+0.5)
+    z2 = int(p2[2]+0.5)
 
-        if dy1 <= dx1:
-            if dx >= 0:
-                x,y,xe=x1,y1,x2
-            else:
-                x,y,xe=x2,y2,x1
-            cell = grid[y][x]
-            cell.tile = dot if delete==False else bkg
-            if z1 > z2:
-                color = shader(color,p1) if delete==False else color
-            else:
-                color = shader(color,p2) if delete==False else color
-            cell.color = color  if delete==False else bkg_color
-            if z1 > cell.zbuffer:   cell.zbuffer = z1
-            if z2 > cell.zbuffer:   cell.zbuffer = z2
-            cell.hasChanged=True
-
-            while x < xe:
-                x+=1
-                if px < 0:
-                    px+=2*dy1
-                else:
-                    if(dx < 0 and dy < 0) or (dx > 0 and dy > 0):
-                        y+=1
-                    else:
-                        y-=1
-                    px+=2*(dy1-dx1)
-                cell = grid[y][x]
-                cell.tile = dot if delete==False else bkg
-                if z1 > z2:
-                    color = shader(color,p1) if delete==False else color
-                else:
-                    color = shader(color,p2) if delete==False else color
-                cell.color = color if delete==False else bkg_color
-                if z1 > cell.zbuffer:   cell.zbuffer = z1
-                if z2 > cell.zbuffer:   cell.zbuffer = z2
-                cell.hasChanged=True
+    for p in points:
+        cell = grid[p[1]][p[0]]
+        cell.tile = dot if delete==False else bkg
+        if z1 > z2:
+            color = shader(color,p1) if delete==False else color
         else:
-            if dy >= 0:
-                x,y,ye = x1,y1,y2
-            else:
-                x,y,ye = x2,y2,y1
-            cell = grid[y][x]
-            cell.tile = dot if delete==False else bkg
-            if z1 > z2:
-                color = shader(color,p1) if delete==False else color
-            else:
-                color = shader(color,p2) if delete==False else color
-            cell.color = color if delete==False else bkg_color
-            if z1 > cell.zbuffer:   cell.zbuffer = z1
-            if z2 > cell.zbuffer:   cell.zbuffer = z2
+            color = shader(color,p2) if delete==False else color
+        cell.color = color  if delete==False else bkg_color
+        if z1 < cell.zbuffer:
+            cell.zbuffer = z1
             cell.hasChanged=True
-            while y < ye:
-                y+=1
-                if py <= 0:
-                    py+=2*dx1
-                else:
-                    if(dx < 0 and dy < 0) or (dx > 0 and dy > 0):
-                        x+=1
-                    else:
-                        x-=1
-                    py+=2*(dx1-dy1)
-                cell = grid[y][x]
-                cell.tile = dot if delete==False else bkg
-                if z1 > z2:
-                    color = shader(color,p1) if delete==False else color
-                else:
-                    color = shader(color,p2) if delete==False else color
-                cell.color = color if delete==False else bkg_color
-                if z1 > cell.zbuffer:   cell.zbuffer = z1
-                if z2 > cell.zbuffer:   cell.zbuffer = z2
-                cell.hasChanged=True
-    except IndexError as e:
-        pass
-        # print(f"IndexError X:{x} Y:{y}")
-        # print(color,p1)
+        if z2 < cell.zbuffer:
+            cell.zbuffer = z2
+            cell.hasChanged=True
 
 def calculateLine(p1,p2):
     global DEBUG
@@ -254,8 +187,8 @@ def drawVectorPoint(point,color,delete=False):
     cell = grid[y][x]
     cell.tile = dot if delete==False else bkg
     cell.color = color  if delete==False else bkg_color
-    # cell.hasChanged=True
-    if z > cell.zbuffer:
+
+    if z > cell.zbuffer or delete==True:
         cell.hasChanged=True
         cell.zbuffer = z
 
@@ -353,7 +286,9 @@ def rotateZ(pivot,point,angle):
 def rotateModel(model,pivot,axis,angle):
     ''' Rotates every point in a model around the chosen pivot'''
 
-    undrawWireframe(model)
+    if WIREFRAME_ENABLED:
+        eraseWireframe(model)
+
 
     if axis=='x':
         for i,p in enumerate(model['points']):
@@ -371,14 +306,15 @@ def rotateModel(model,pivot,axis,angle):
         drawWireframe(model)
     updateScreen()
 
-def undrawWireframe(model):
+def eraseWireframe(model):
     for poly in model['polygons']:
         p1 = matrixToVector(model['points'][poly[0]])
         p2 = matrixToVector(model['points'][poly[1]])
         p3 = matrixToVector(model['points'][poly[2]])
         color = poly[3]
-        drawLine(p1,p2,color,delete=True)
-        drawLine(p2,p3,color,delete=True)
+        eraseLine(p1,p2)
+        eraseLine(p2,p3)
+        eraseLine(p3,p1)
 
 def drawWireframe(model):
     for poly in model['polygons']:
@@ -388,12 +324,18 @@ def drawWireframe(model):
         color = poly[3]
         drawLine(p1,p2,color)
         drawLine(p2,p3,color)
+        drawLine(p3,p1,color)
 
 def printDebug():
+    global DEBUG,OLD_DEBUG
+    if DEBUG == OLD_DEBUG:
+        time.sleep(0.01)
+        return
     moveCursor(len(grid),0)
     print(' '*50)
     moveCursor(len(grid),0)
     print(DEBUG)
+    OLD_DEBUG = DEBUG
 
 def polyFill(model):
     global DEBUG
@@ -410,12 +352,29 @@ def polyFill(model):
         polygon_z_list.append([i,p1_z+p2_z+p3_z])
     #sort the list from low to high
     polygon_z_list.sort(key=lambda x: x[1])
-    for i in range(len(polygon_z_list)):
-        poly = model['polygons'][i]
+
+
+    # '''debug'''
+    # for i,pz in enumerate(polygon_z_list):
+    #     poly = model['polygons'][pz[0]]
+    #     if poly[3] == (255,0,0):
+    #         DEBUG =f"Red triangle is {i}/{len(polygon_z_list)-1} in polygon_z_list and Z value:{matrixToVector(model['points'][poly[0]])[2]}"
+    # '''/debug'''
+
+    #clear all old colored points
+    for p in model['old_points']:
+        drawVectorPoint(p,None,delete=True)
+    # Reset old points
+    model['old_points']=[]
+
+    # Fill in polygons with color
+    for pz in polygon_z_list:
+    # for i in range(len(polygon_z_list)):
+        poly = model['polygons'][pz[0]]
         p1 = matrixToVector(model['points'][poly[0]])
         p2 = matrixToVector(model['points'][poly[1]])
         p3 = matrixToVector(model['points'][poly[2]])
-        color = poly[3][:]
+        color = poly[3]
         # calc line between two points...
         line_a_to_b = calculateLine(p1,p2)
         # calc line from each points of the above calculated line, to point3
@@ -429,18 +388,19 @@ def polyFill(model):
                 else:
                     shaded_color = color
                 drawVectorPoint(p,shaded_color)
+                model['old_points'].append(p)
 if __name__ == '__main__':
     DEBUG='start'
-    FILL_POLYGONS=False
+    FILL_POLYGONS=True
     SHADER_ENABLED=False
-    WIREFRAME_ENABLED=True
-    model = models.cube
+    WIREFRAME_ENABLED=False
+    # model = models.cube
     # polyFill(model)
 
     # updateScreen()
     models =[models.cube]
+    
     while True:
-
         if keyboard.is_pressed('w'):
             WIREFRAME_ENABLED = not(WIREFRAME_ENABLED)
         if keyboard.is_pressed('s'):
@@ -465,4 +425,4 @@ if __name__ == '__main__':
         if keyboard.is_pressed('x'):
             for model in models:
                 rotateModel(model,origin,'z',-0.1)
-        # printDebug()
+        printDebug()
